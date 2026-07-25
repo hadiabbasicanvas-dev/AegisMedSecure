@@ -1,0 +1,18 @@
+# Frontend Dependencies
+node_modules/
+
+# Build Outputs
+dist/
+.vite/
+
+# Environment Variables
+.env
+.env.local
+.env.production
+!.env.example
+
+# Logs & Editor
+*.log
+.vscode/
+.DS_Store
+tsconfig.tsbuildinfo

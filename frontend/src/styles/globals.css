@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0A0A0A;
+    --bg-secondary: #171717;
+    --bg-surface: #2A2A2A;
+    --text-primary: #F5F5F5;
+    --text-muted: #888888;
+    --accent-crimson: #D90429;
+    --status-success: #00C853;
+  }
+
+  .dark {
+    --bg-primary: #0A0A0A;
+    --bg-secondary: #171717;
+    --bg-surface: #2A2A2A;
+    --text-primary: #F5F5F5;
+    --text-muted: #888888;
+    --accent-crimson: #D90429;
+    --status-success: #00C853;
+  }
+
+  body {
+    background-color: #0A0A0A;
+    color: #F5F5F5;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D90429;
+}
+
+/* Radar Sweep Keyframe Animation */
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 8s linear infinite;
+}
+
+/* Laser Scanline Beam */
+@keyframes laser-scan {
+  0% {
+    top: -5%;
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 105%;
+    opacity: 0.8;
+  }
+}
+
+.animate-laser-scan {
+  animation: laser-scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Industrial Grid Background */
+.bg-industrial-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(42, 42, 42, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42, 42, 42, 0.4) 1px, transparent 1px);
+}
+
+/* Matte Card Hover Animation */
+.matte-card {
+  background: #171717;
+  border: 1px solid #2A2A2A;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.matte-card:hover {
+  transform: translateY(-6px);
+  border-color: #D90429;
+  box-shadow: 0 20px 40px -15px rgba(217, 4, 41, 0.15);
+}

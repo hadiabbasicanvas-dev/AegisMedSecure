@@ -1,0 +1,15 @@
+# Backend Dependencies
+node_modules/
+
+# Build Outputs
+dist/
+
+# Environment Variables
+.env
+.env.local
+!.env.example
+
+# Logs & Editor
+*.log
+.vscode/
+.DS_Store
