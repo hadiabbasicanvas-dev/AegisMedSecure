@@ -1,0 +1,446 @@
+// Aegis Guardian AI - Prisma Database Schema
+// Client: Quaid-e-Azam International Hospital (Academic Demonstration)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleType {
+  SUPER_ADMINISTRATOR
+  SOC_MANAGER
+  SECURITY_ANALYST
+  IT_ADMINISTRATOR
+  COMPLIANCE_OFFICER
+}
+
+enum SeverityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+enum ThreatStatus {
+  OPEN
+  INVESTIGATING
+  CONTAINED
+  RESOLVED
+  CLOSED
+}
+
+enum ThreatCategory {
+  MALWARE
+  RANSOMWARE
+  SQL_INJECTION
+  BRUTE_FORCE
+  DDOS
+  PHISHING
+  INSIDER_THREAT
+  UNAUTHORIZED_ACCESS
+  PORT_SCANNING
+  DATA_EXFILTRATION
+  SUSPICIOUS_USB
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ReportType {
+  EXECUTIVE_SUMMARY
+  THREAT_INTELLIGENCE
+  INCIDENT_ANALYSIS
+  DEPARTMENT_SECURITY
+  ASSET_HEALTH
+  AI_PERFORMANCE
+  COMPLIANCE_AUDIT
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  JSON
+}
+
+enum IncidentStatus {
+  NEW
+  ASSIGNED
+  INVESTIGATING
+  CONTAINED
+  ERADICATED
+  RECOVERED
+  CLOSED
+}
+
+enum IncidentPriority {
+  P1_CRITICAL
+  P2_HIGH
+  P3_MEDIUM
+  P4_LOW
+}
+
+enum IncidentCategory {
+  RANSOMWARE_CONTAINMENT
+  DATA_EXFILTRATION_BREACH
+  EMR_UNAUTHORIZED_ACCESS
+  PACS_IMAGE_ENCRYPTION
+  IOMT_MALWARE_INFECTION
+  NETWORK_BRUTE_FORCE
+  PHISHING_EXPLOIT
+}
+
+enum EvidenceFileType {
+  SCREENSHOT
+  LOG_FILE
+  PDF_DOCUMENT
+  IMAGE
+  NETWORK_CAPTURE
+}
+
+enum ResponseActionType {
+  VLAN_ISOLATION
+  MALWARE_REMOVAL
+  PASSWORD_RESET
+  ACCOUNT_LOCK
+  FIREWALL_RULE
+  DEVICE_SCAN
+  PATCH_APPLIED
+}
+
+enum AssetType {
+  SERVER
+  WORKSTATION
+  MEDICAL_DEVICE
+  FIREWALL
+  ROUTER
+  SWITCH
+  IMAGING_EQUIPMENT
+  NETWORK_APPLIANCE
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  passwordHash          String
+  firstName             String
+  lastName              String
+  department            String?
+  role                  RoleType               @default(SECURITY_ANALYST)
+  isEmailVerified       Boolean                @default(false)
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  
+  refreshTokens         RefreshToken[]
+  passwordResetTokens   PasswordResetToken[]
+  emailVerifyTokens     EmailVerificationToken[]
+  sessions              Session[]
+  assignedThreats       Threat[]
+  conversations         Conversation[]
+  generatedReports      Report[]
+  assignedIncidents     Incident[]             @relation("PrimaryAnalyst")
+  auditLogs             AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verification_tokens")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Threat {
+  id               String               @id @default(uuid())
+  threatCode       String               @unique
+  name             String
+  description      String
+  category         ThreatCategory
+  severity         SeverityLevel
+  status           ThreatStatus         @default(OPEN)
+  sourceSystem     String
+  departmentName   String
+  affectedAsset    String
+  sourceIp         String?
+  destinationIp    String?
+  aiConfidence     Float
+  aiRiskScore      Int
+  aiSummary        String?
+  assignedToId     String?
+  assignedTo       User?                @relation(fields: [assignedToId], references: [id])
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  
+  timelineEvents   ThreatTimelineEvent[]
+  incidents        Incident[]
+
+  @@index([threatCode])
+  @@index([status])
+  @@index([severity])
+  @@index([departmentName])
+  @@index([createdAt])
+  @@map("threats")
+}
+
+model ThreatTimelineEvent {
+  id          String   @id @default(uuid())
+  threatId    String
+  threat      Threat   @relation(fields: [threatId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  actor       String
+  timestamp   DateTime @default(now())
+
+  @@index([threatId])
+  @@map("threat_timeline_events")
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String    @default("New Security Investigation")
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages  Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  structuredData Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Report {
+  id             String       @id @default(uuid())
+  title          String
+  reportType     ReportType
+  format         ReportFormat
+  fileUrl        String?
+  filtersApplied Json?
+  generatedById  String
+  generatedBy    User         @relation(fields: [generatedById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([generatedById])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model Incident {
+  id                   String               @id @default(uuid())
+  incidentCode         String               @unique
+  title                String
+  description          String
+  category             IncidentCategory
+  severity             SeverityLevel
+  priority             IncidentPriority     @default(P2_HIGH)
+  status               IncidentStatus       @default(NEW)
+  sourceSystem         String
+  departmentName       String
+  affectedAsset        String
+  sourceIp             String?
+  destinationIp        String?
+  threatId             String?
+  threat               Threat?              @relation(fields: [threatId], references: [id], onDelete: SetNull)
+  assignedToId         String?
+  assignedTo           User?                @relation("PrimaryAnalyst", fields: [assignedToId], references: [id])
+  secondaryAnalystName String?
+  createdBy            String               @default("Aegis SOAR Engine")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  closedAt             DateTime?
+
+  timelineEvents       IncidentTimelineEvent[]
+  notes                IncidentNote[]
+  evidenceItems        IncidentEvidence[]
+  responseActions      IncidentAction[]
+
+  @@index([incidentCode])
+  @@index([status])
+  @@index([severity])
+  @@index([priority])
+  @@index([departmentName])
+  @@index([createdAt])
+  @@map("incidents")
+}
+
+model IncidentTimelineEvent {
+  id          String   @id @default(uuid())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  actor       String
+  timestamp   DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("incident_timeline_events")
+}
+
+model IncidentNote {
+  id          String   @id @default(uuid())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  authorName  String
+  content     String
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([incidentId])
+  @@map("incident_notes")
+}
+
+model IncidentEvidence {
+  id          String           @id @default(uuid())
+  incidentId  String
+  incident    Incident         @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    EvidenceFileType
+  fileSize    String
+  fileUrl     String
+  description String
+  uploadedBy  String
+  createdAt   DateTime         @default(now())
+
+  @@index([incidentId])
+  @@map("incident_evidence")
+}
+
+model IncidentAction {
+  id            String             @id @default(uuid())
+  incidentId    String
+  incident      Incident           @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actionType    ResponseActionType
+  actionName    String
+  performedBy   String
+  resultStatus  String             @default("SUCCESS")
+  comments      String?
+  createdAt     DateTime           @default(now())
+
+  @@index([incidentId])
+  @@map("incident_actions")
+}
+
+model Asset {
+  id             String     @id @default(uuid())
+  assetCode      String     @unique
+  name           String
+  type           AssetType
+  departmentName String
+  ipAddress      String?
+  macAddress     String?
+  os             String?
+  owner          String?
+  riskLevel      RiskLevel  @default(LOW)
+  isMonitored    Boolean    @default(true)
+  lastScanAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([assetCode])
+  @@index([type])
+  @@index([riskLevel])
+  @@map("assets")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  module    String
+  details   String
+  ipAddress String?
+  result    String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  category  String
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@map("system_settings")
+}
